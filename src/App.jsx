@@ -1,14 +1,9 @@
-import React from 'react';
-import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
+import OrderForm from './components/OrderForm';
 
 function App() {
   return (
-    <div className="flex">
-      <Sidebar />
-      <main className="flex-1 ml-64 bg-gray-100 min-h-screen">
-        <Dashboard />
-      </main>
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <OrderForm />
     </div>
   );
 }
