@@ -116,4 +116,23 @@ router.delete('/bundles/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
+router.get('/analytics', authenticateAdmin, async (req, res) => {
+  try {
+    const totalVendors = await pool.query('SELECT COUNT(*) FROM vendors');
+    const totalSales = await pool.query('SELECT SUM(profit) FROM orders');
+    const pendingWithdrawals = await pool.query("SELECT SUM(amount) FROM withdrawals WHERE status = 'Pending'");
+    const topVendors = await pool.query('SELECT vendor_id, SUM(profit) as total_sales FROM orders GROUP BY vendor_id ORDER BY total_sales DESC LIMIT 5');
+
+    res.status(200).json({
+      totalVendors: Number(totalVendors.rows[0].count),
+      totalSales: Number(totalSales.rows[0].sum || 0),
+      pendingWithdrawals: Number(pendingWithdrawals.rows[0].sum || 0),
+      topVendors: topVendors.rows
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

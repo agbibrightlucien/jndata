@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import axios from 'axios';
 
 const schema = yup.object().shape({
   phoneNumber: yup
@@ -35,6 +36,7 @@ const paymentMethods = [
 export default function OrderForm() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
+  const [error, setError] = useState('');
 
   const {
     register,
@@ -48,25 +50,38 @@ export default function OrderForm() {
   const onSubmit = async (data) => {
     try {
       setIsProcessing(true);
-      // Simulate payment verification
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      setError('');
       
+      // Get the token from localStorage
+      const token = localStorage.getItem('vendorToken');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      // Prepare order data
+      const orderData = {
+        phoneNumber: data.phoneNumber,
+        network: data.network,
+        dataPackage: data.dataPackage,
+        vendorId: localStorage.getItem('vendorId'), // Get vendorId from storage
+        paymentMethod: data.paymentMethod
+      };
+
       // Submit order to backend
-      const response = await fetch('/api/orders', {
-        method: 'POST',
+      const response = await axios.post('/api/vendors/orders', orderData, {
         headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
-      if (!response.ok) throw new Error('Failed to submit order');
-      
       alert('Order submitted successfully!');
       reset();
       setSelectedPackage(null);
     } catch (error) {
-      alert('Error: ' + error.message);
+      const errorMessage = error.response?.data?.error || error.message;
+      setError(errorMessage);
+      alert('Error: ' + errorMessage);
     } finally {
       setIsProcessing(false);
     }

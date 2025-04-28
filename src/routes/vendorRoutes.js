@@ -1,8 +1,22 @@
 import express from 'express';
 import bcrypt from 'bcrypt';
 import { pool } from '../db/db.js';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
+
+const authenticateVendor = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Access denied. No token provided.' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.vendor = decoded;
+    next();
+  } catch (error) {
+    res.status(400).json({ error: 'Invalid token.' });
+  }
+};
 
 router.post('/register', async (req, res) => {
   const { fullName, email, password, phoneNumber, momoNumber } = req.body;
@@ -53,7 +67,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.post('/orders', async (req, res) => {
+router.post('/orders', authenticateVendor, async (req, res) => {
   const { phoneNumber, network, dataPackage, vendorId } = req.body;
 
   if (!phoneNumber || !network || !dataPackage || !vendorId) {
@@ -62,7 +76,7 @@ router.post('/orders', async (req, res) => {
 
   try {
     const result = await pool.query(
-      'INSERT INTO orders (phone_number, network, data_package, vendor_id, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      'INSERT INTO orders (phone_number, network, data_package, vendor_id, status, profit) VALUES ($1, $2, $3, $4, $5, (SELECT price - base_price FROM bundles WHERE id = $3)) RETURNING *',
       [phoneNumber, network, dataPackage, vendorId, 'Pending']
     );
 
@@ -76,7 +90,7 @@ router.post('/orders', async (req, res) => {
   }
 });
 
-router.post('/withdrawals', async (req, res) => {
+router.post('/withdrawals', authenticateVendor, async (req, res) => {
   const { vendorId, amount } = req.body;
 
   if (!vendorId || !amount) {
@@ -96,7 +110,7 @@ router.post('/withdrawals', async (req, res) => {
   }
 });
 
-router.get('/withdrawals/history', async (req, res) => {
+router.get('/withdrawals/history', authenticateVendor, async (req, res) => {
   const { vendorId } = req.query;
 
   if (!vendorId) {
