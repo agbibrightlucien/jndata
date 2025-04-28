@@ -53,4 +53,27 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.post('/orders', async (req, res) => {
+  const { phoneNumber, network, dataPackage, vendorId } = req.body;
+
+  if (!phoneNumber || !network || !dataPackage || !vendorId) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  try {
+    const result = await pool.query(
+      'INSERT INTO orders (phone_number, network, data_package, vendor_id, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [phoneNumber, network, dataPackage, vendorId, 'Pending']
+    );
+
+    // Simulate admin notification
+    console.log('New order placed:', result.rows[0]);
+
+    res.status(201).json({ message: 'Order placed successfully', order: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
