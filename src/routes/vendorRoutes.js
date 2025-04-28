@@ -76,4 +76,40 @@ router.post('/orders', async (req, res) => {
   }
 });
 
+router.post('/withdrawals', async (req, res) => {
+  const { vendorId, amount } = req.body;
+
+  if (!vendorId || !amount) {
+    return res.status(400).json({ error: 'Vendor ID and amount are required' });
+  }
+
+  try {
+    const result = await pool.query(
+      'INSERT INTO withdrawals (vendor_id, amount, status) VALUES ($1, $2, $3) RETURNING *',
+      [vendorId, amount, 'Completed']
+    );
+
+    res.status(201).json({ message: 'Withdrawal request successful', withdrawal: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.get('/withdrawals/history', async (req, res) => {
+  const { vendorId } = req.query;
+
+  if (!vendorId) {
+    return res.status(400).json({ error: 'Vendor ID is required' });
+  }
+
+  try {
+    const result = await pool.query('SELECT * FROM withdrawals WHERE vendor_id = $1 ORDER BY created_at DESC', [vendorId]);
+    res.status(200).json({ withdrawals: result.rows });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
