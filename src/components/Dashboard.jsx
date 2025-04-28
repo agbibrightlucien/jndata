@@ -3,15 +3,19 @@ import React from 'react';
 const Dashboard = () => {
   // Dummy data for the dashboard
   const metrics = {
-    totalProfit: '$15,234.50',
+    totalProfit: 'GH₵15,234.50',
     customerOrders: 156,
-    vendorLink: 'https://vendor.example.com/ref/123',
+    mobileMoneyStats: {
+      mtnMomo: 'GH₵8,450',
+      vodafoneCash: 'GH₵4,234',
+      airtelTigo: 'GH₵2,550'
+    }
   };
 
   const subVendors = [
-    { id: 1, name: 'John Doe', orders: 45, profit: '$2,345' },
-    { id: 2, name: 'Jane Smith', orders: 32, profit: '$1,890' },
-    { id: 3, name: 'Mike Johnson', orders: 28, profit: '$1,670' },
+    { id: 1, name: 'Kwame Mensah', orders: 45, profit: 'GH₵2,345' },
+    { id: 2, name: 'Abena Osei', orders: 32, profit: 'GH₵1,890' },
+    { id: 3, name: 'Kofi Addo', orders: 28, profit: 'GH₵1,670' },
   ];
 
   return (
@@ -32,12 +36,23 @@ const Dashboard = () => {
           <p className="text-3xl font-bold text-gray-900 mt-2">{metrics.customerOrders}</p>
         </div>
 
-        {/* Vendor Link Card */}
+        {/* Mobile Money Stats */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-gray-500 text-sm font-medium">Personal Vendor Link</h3>
-          <p className="text-sm font-medium text-blue-600 mt-2 break-all">
-            {metrics.vendorLink}
-          </p>
+          <h3 className="text-gray-500 text-sm font-medium">Mobile Money Revenue</h3>
+          <div className="space-y-2 mt-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">MTN MoMo</span>
+              <span className="font-semibold">{metrics.mobileMoneyStats.mtnMomo}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Vodafone Cash</span>
+              <span className="font-semibold">{metrics.mobileMoneyStats.vodafoneCash}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">AirtelTigo Money</span>
+              <span className="font-semibold">{metrics.mobileMoneyStats.airtelTigo}</span>
+            </div>
+          </div>
         </div>
       </div>
 
