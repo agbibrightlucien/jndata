@@ -98,6 +98,75 @@ router.put('/bundles/:id', authenticateAdmin, async (req, res) => {
 
   try {
     const result = await pool.query('UPDATE bundles SET network_id = $1, name = $2, size = $3, price = $4 WHERE id = $5 RETURNING *', [network_id, name, size, price, id]);
+
+// Orders Management
+router.get('/orders', authenticateAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT orders.*, vendors.full_name as vendor_name FROM orders LEFT JOIN vendors ON orders.vendor_id = vendors.id ORDER BY created_at DESC'
+    );
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.put('/orders/:id', authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  
+  if (!status) return res.status(400).json({ error: 'Status is required' });
+  
+  try {
+    const result = await pool.query(
+      'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+      [status, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Withdrawals Management
+router.get('/withdrawals', authenticateAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT withdrawals.*, vendors.full_name as vendor_name FROM withdrawals LEFT JOIN vendors ON withdrawals.vendor_id = vendors.id ORDER BY created_at DESC'
+    );
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.put('/withdrawals/:id/approve', authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const result = await pool.query(
+      'UPDATE withdrawals SET status = $1, processed_at = NOW() WHERE id = $2 RETURNING *',
+      ['Approved', id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Withdrawal request not found' });
+    }
+    
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
     res.status(200).json(result.rows[0]);
   } catch (error) {
     console.error(error);

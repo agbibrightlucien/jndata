@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import axios from 'axios';
+import { customerAPI } from '../services/api';
 
 const schema = yup.object().shape({
   phoneNumber: yup
@@ -36,7 +36,6 @@ const paymentMethods = [
 export default function OrderForm() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
-  const [error, setError] = useState('');
 
   const {
     register,
@@ -50,37 +49,20 @@ export default function OrderForm() {
   const onSubmit = async (data) => {
     try {
       setIsProcessing(true);
-      setError('');
       
-      // Get the token from localStorage
-      const token = localStorage.getItem('vendorToken');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-
-      // Prepare order data
-      const orderData = {
-        phoneNumber: data.phoneNumber,
-        network: data.network,
-        dataPackage: data.dataPackage,
-        vendorId: localStorage.getItem('vendorId'), // Get vendorId from storage
-        paymentMethod: data.paymentMethod
-      };
-
       // Submit order to backend
-      const response = await axios.post('/api/vendors/orders', orderData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await customerAPI.placeOrder({
+        ...data,
+        packageId: selectedPackage?.id,
+        amount: selectedPackage?.price
       });
 
-      alert('Order submitted successfully!');
+      // Show success message
+      alert(`Order submitted successfully! Order ID: ${response.data.order.id}`);
       reset();
       setSelectedPackage(null);
     } catch (error) {
-      const errorMessage = error.response?.data?.error || error.message;
-      setError(errorMessage);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to submit order';
       alert('Error: ' + errorMessage);
     } finally {
       setIsProcessing(false);

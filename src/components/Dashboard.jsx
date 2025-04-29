@@ -1,33 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { vendorAPI } from '../services/api';
 
 const Dashboard = () => {
-  const [metrics, setMetrics] = useState(null);
+  const [metrics, setMetrics] = useState({
+    totalProfit: '0',
+    customerOrders: 0,
+    mobileMoneyStats: {
+      mtnMomo: '0',
+      vodafoneCash: '0',
+      airtelTigo: '0'
+    }
+  });
+
   const [subVendors, setSubVendors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const token = localStorage.getItem('vendorToken');
-        if (!token) {
-          throw new Error('Authentication required');
-        }
-
-        const response = await axios.get('/api/vendors/dashboard', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
+        const response = await vendorAPI.getDashboard();
         setMetrics(response.data.metrics);
-        setSubVendors(response.data.subVendors);
-        setError('');
-      } catch (error) {
-        const errorMessage = error.response?.data?.error || error.message;
-        setError(errorMessage);
+        setSubVendors(response.data.subVendors || []);
+      } catch (err) {
+        setError('Failed to load dashboard data');
+        console.error('Dashboard error:', err);
       } finally {
         setLoading(false);
       }
@@ -35,24 +32,6 @@ const Dashboard = () => {
 
     fetchDashboardData();
   }, []);
-
-  if (loading) {
-    return (
-      <div className="p-6 flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          Error: {error}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-6">
@@ -63,13 +42,13 @@ const Dashboard = () => {
         {/* Total Profit Card */}
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-gray-500 text-sm font-medium">Total Profit</h3>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{metrics?.totalProfit || 'GH₵0.00'}</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">{metrics.totalProfit}</p>
         </div>
 
         {/* Customer Orders Card */}
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-gray-500 text-sm font-medium">Customer Orders</h3>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{metrics?.customerOrders || 0}</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">{metrics.customerOrders}</p>
         </div>
 
         {/* Mobile Money Stats */}
@@ -78,15 +57,15 @@ const Dashboard = () => {
           <div className="space-y-2 mt-2">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">MTN MoMo</span>
-              <span className="font-semibold">{metrics?.mobileMoneyStats?.mtnMomo || 'GH₵0.00'}</span>
+              <span className="font-semibold">{metrics.mobileMoneyStats.mtnMomo}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Vodafone Cash</span>
-              <span className="font-semibold">{metrics?.mobileMoneyStats?.vodafoneCash || 'GH₵0.00'}</span>
+              <span className="font-semibold">{metrics.mobileMoneyStats.vodafoneCash}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">AirtelTigo Money</span>
-              <span className="font-semibold">{metrics?.mobileMoneyStats?.airtelTigo || 'GH₵0.00'}</span>
+              <span className="font-semibold">{metrics.mobileMoneyStats.airtelTigo}</span>
             </div>
           </div>
         </div>
@@ -106,21 +85,13 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {subVendors.length > 0 ? (
-                  subVendors.map((vendor) => (
-                    <tr key={vendor.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{vendor.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vendor.orders}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vendor.profit}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="3" className="px-6 py-4 text-center text-sm text-gray-500">
-                      No sub-vendors found
-                    </td>
+                {subVendors.map((vendor) => (
+                  <tr key={vendor.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{vendor.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vendor.orders}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vendor.profit}</td>
                   </tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
